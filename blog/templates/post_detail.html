@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="container mt-4">
+                <h2 class="mb-4">{{ post.title }}</h2>
+                {% if post.image %}
+                    <img src="{{ post.image.url }}" alt="{{ post.title }}" class="img-fluid mb-4">
+                {% endif %}
+                <p class="card-text">{{ post.content|linebreaksbr }}</p>
+                <br>
+            </div>
+            
+            <!-- Display edit and delete options if user can_edit -->
+            {% if can_edit %}
+            <p><a href="{% url 'post-edit' post.pk %}" class="btn btn-primary">Edit Post</a></p>
+            <!-- Add delete option if needed -->
+            {% endif %}
+            
+            <!-- Like button and total likes -->
+            <form method="post" action="{% url 'post-detail' post.pk %}">
+                {% csrf_token %}
+                <button type="submit" name="like" class="btn btn-outline-primary">
+                    {% if is_liked %}
+                    Unlike
+                    {% else %}
+                    Like
+                    {% endif %}
+                </button>
+                <span class="ml-2">{{ total_likes }} {% if total_likes == 1 %}like{% else %}likes{% endif %}</span>
+            </form>
+            <br>
+            
+            <!-- Comments section -->
+            <h4>Comments</h4>
+<ul class="list-unstyled">
+    {% for comment in comments %}
+    <li>
+        <div class="comment-content">
+            <strong>{{ comment.author.username }}</strong> - {{ comment.text }}
+            
+        <form action="{% url 'delete_comment' comment.id %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+        </form>
+        
+            <a href="#" class="btn btn-link btn-sm reply-toggle" data-comment-id="{{ comment.id }}">Reply</a>
+            <!-- Display replies -->
+            <ul class="list-unstyled ml-4 replies-list">
+                {% for reply in comment.replies.all %}
+                <li>
+                    <div class="comment-content">
+                        <strong>{{ reply.author.username }}</strong> - {{ reply.text }}
+                        {% if reply.author == request.user or request.user.is_staff %}
+                        <form class="delete-reply-btn" data-comment-id="{{ comment.id }}" method="post" action="{% url 'delete_reply' comment_id=comment.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>                        
+                    {% endif %}
+                        <a href="#" class="btn btn-link btn-sm reply-toggle" data-comment-id="{{ comment.id }}">Reply</a>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <!-- Reply form -->
+        <div class="reply-form mt-2" style="display: none;" data-comment-id="{{ comment.id }}">
+            <form method="post" action="{% url 'post-detail' post.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="reply_to_id" value="{{ comment.id }}">
+                <div class="mb-3">
+                    <label for="id_reply_text" class="form-label">Reply</label>
+                    <textarea id="id_reply_text" name="text" class="form-control form-control-sm" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-success btn-sm">Submit Reply</button>
+            </form>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+            
+            <!-- Form to add comment -->
+            {% if request.user.is_authenticated %}
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_text" class="form-label">Comment</label>
+                    <textarea id="id_text" name="text" class="form-control form-control-sm" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-success">Submit Comment</button>
+            </form>
+            {% else %}
+            <p>Please <a href="{% url 'login' %}" class="btn btn-primary">log in</a> to add a comment.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle reply form visibility
+        document.querySelectorAll('.reply-toggle').forEach(function(link) {
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                var commentId = this.getAttribute('data-comment-id');
+                var replyForm = document.querySelector('.reply-form[data-comment-id="' + commentId + '"]');
+                if (replyForm.style.display === 'none' || replyForm.style.display === '') {
+                    replyForm.style.display = 'block';
+                } else {
+                    replyForm.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+    
+{% endblock %}

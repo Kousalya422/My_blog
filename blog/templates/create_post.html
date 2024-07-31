@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Create a New Post</h2>
+
+  {% if request.user.is_authenticated %}
+      User ID: {{ request.user.id }}
+  {% else %}
+      User is not authenticated.
+  {% endif %}
+  
+  {% if request.user.is_authenticated and (request.user.is_superuser) %}
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Submit</button>
+    </form>
+  {% else %}
+    <p>Sorry, you do not have permission to create a post.</p>
+  {% endif %}
+  
+{% endblock %}
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Create Post</button>
+</form>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Create Blog Post</button>
+</form>
+
+<h1>{{ post.title }}</h1>
+<p>{{ post.content }}</p>
+<img src="{{ post.image.url }}" alt="Blog Post Image">
